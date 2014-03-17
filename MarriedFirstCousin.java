@@ -21,11 +21,8 @@ import org.gedcom4j.model.Individual;
 import org.gedcom4j.model.Family;
 import org.gedcom4j.parser.GedcomParser;
 import org.gedcom4j.parser.GedcomParserException;
-import org.gedcom4j.relationship.Relationship;
-import org.gedcom4j.relationship.RelationshipCalculator;
-import org.gedcom4j.relationship.RelationshipName;
 
-public class Married1stCousin {
+public class MarriedFirstCousin {
 
     /**
      *  Returns the (first) family where the given individual is a child,
@@ -39,18 +36,32 @@ public class Married1stCousin {
     public static void main( String arg[] )
         throws IOException, GedcomParserException {
         GedcomParser parser = new GedcomParser();
-        parser.load(arg[0]);
-        RelationshipCalculator calculator = new RelationshipCalculator();
+        parser.load(arg[0]);    
         for ( Family family : parser.gedcom.families.values() ) {
-            if ( family.husband != null && family.wife != null ) {
-                calculator.calculateRelationships(family.husband,family.wife,false);
-                for ( Relationship relationship : calculator.relationshipsFound ) {
-                    if ( relationship.toString() == "FIRST_COUSIN" ) {
-                        System.out.println(
-                            family.husband.names.get(0).basic +
-                            " married first cousin " +
-                            family.wife.names.get(0).basic );
-                    } 
+            Family husbandsFamily = parentsFamily(family.husband);
+            Family wifesFamily    = parentsFamily(family.wife);
+            if ( husbandsFamily != null && wifesFamily != null &&
+                 husbandsFamily != wifesFamily ) {
+                /*
+                 *  The husband and wife are first cousins if
+                 *  they have a pair of grandparents in common.
+                 */
+                Family husbandsFathers = parentsFamily(husbandsFamily.husband);
+                Family husbandsMothers = parentsFamily(husbandsFamily.wife);
+                Family wifesFathers    = parentsFamily(wifesFamily.husband);
+                Family wifesMothers    = parentsFamily(wifesFamily.wife);
+                if ( ( husbandsFathers != null && wifesFathers != null &&
+                       husbandsFathers         == wifesFathers            ) ||
+                     ( husbandsFathers != null && wifesMothers != null &&
+                       husbandsFathers         == wifesMothers            ) ||
+                     ( husbandsMothers != null && wifesFathers != null &&
+                       husbandsMothers         == wifesFathers            ) ||
+                     ( husbandsMothers != null && wifesMothers != null &&
+                       husbandsMothers         == wifesMothers            ) ) {
+                    System.out.println(
+                        family.husband.names.get(0).basic +
+                        " married first cousin " +
+                        family.wife.names.get(0).basic );
                 }
             }
         }
